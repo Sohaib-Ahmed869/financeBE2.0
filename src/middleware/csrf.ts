@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
-import { ForbiddenError } from '../lib/errors';
+import { AppError } from '../lib/errors';
 import { randomToken, safeEqual } from '../lib/crypto';
 import { baseCookieOptions, clearCookieOptions } from '../lib/cookies';
 
@@ -26,7 +26,9 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
       maxAge: env.SESSION_TTL_HOURS * 60 * 60 * 1000,
     });
     if (!SAFE_METHODS.has(req.method)) {
-      return next(new ForbiddenError('CSRF token missing — retry after this response sets it'));
+      return next(
+        new AppError('CSRF token missing — retry after this response sets it', 403, 'CSRF'),
+      );
     }
     return next();
   }
@@ -35,7 +37,7 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
 
   const headerToken = req.header('x-csrf-token');
   if (!headerToken || !safeEqual(headerToken, cookieToken)) {
-    return next(new ForbiddenError('Invalid CSRF token'));
+    return next(new AppError('Invalid CSRF token', 403, 'CSRF'));
   }
   next();
 }
