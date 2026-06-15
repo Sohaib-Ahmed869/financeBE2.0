@@ -54,7 +54,7 @@ export function createApp(): Application {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: [...env.CLIENT_ORIGIN],
       credentials: true,
       exposedHeaders: ['X-CSRF-Token'],
     }),

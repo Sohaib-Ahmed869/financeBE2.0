@@ -41,7 +41,15 @@ const EnvSchema = z.object({
     .transform((v) => v === 'true'),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(8),
 
-  CLIENT_ORIGIN: z.string().default('http://localhost:5173'),
+  CLIENT_ORIGIN: z
+    .string()
+    .default('http://localhost:5173')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ),
 
   SEED_SOHAIB_EMAIL: z.string().email().optional(),
   SEED_SOHAIB_PASSWORD: z.string().optional(),
