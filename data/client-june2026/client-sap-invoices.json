@@ -1,0 +1,47 @@
+[
+  {
+    "method": "Cheque",
+    "cardCode": "C2622",
+    "cardName": "CHICKEN ASIA",
+    "docEntry": 437198,
+    "docNum": 333662,
+    "amount": 1450,
+    "date": "2026-06-01"
+  },
+  {
+    "method": "Bank",
+    "cardCode": "C6819",
+    "cardName": "UGUR SARL",
+    "docEntry": 437199,
+    "docNum": 333663,
+    "amount": 845,
+    "date": "2026-06-01"
+  },
+  {
+    "method": "Cash",
+    "cardCode": "C2422",
+    "cardName": "YUNUS",
+    "docEntry": 437200,
+    "docNum": 333664,
+    "amount": 396.4,
+    "date": "2026-06-01"
+  },
+  {
+    "method": "CB-Site",
+    "cardCode": "C2983",
+    "cardName": "FIRAT",
+    "docEntry": 437201,
+    "docNum": 333665,
+    "amount": 720,
+    "date": "2026-06-01"
+  },
+  {
+    "method": "PayPal",
+    "cardCode": "C2336",
+    "cardName": "O.F.C",
+    "docEntry": 437202,
+    "docNum": 333666,
+    "amount": 188.2,
+    "date": "2026-06-01"
+  }
+]

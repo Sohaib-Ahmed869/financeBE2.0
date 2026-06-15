@@ -1,0 +1,50 @@
+[
+  {
+    "docEntry": 437186,
+    "docNum": 333651,
+    "cardCode": "C2622",
+    "amount": 1240.5,
+    "date": "2026-06-01",
+    "method": "Cheque"
+  },
+  {
+    "docEntry": 437187,
+    "docNum": 333652,
+    "cardCode": "C4494",
+    "amount": 284.64,
+    "date": "2026-06-01",
+    "method": "Bank"
+  },
+  {
+    "docEntry": 437188,
+    "docNum": 333653,
+    "cardCode": "C6819",
+    "amount": 980,
+    "date": "2026-06-01",
+    "method": "CB-Site"
+  },
+  {
+    "docEntry": 437189,
+    "docNum": 333654,
+    "cardCode": "C2983",
+    "amount": 156.3,
+    "date": "2026-06-01",
+    "method": "PayPal"
+  },
+  {
+    "docEntry": 437190,
+    "docNum": 333655,
+    "cardCode": "C2422",
+    "amount": 432.75,
+    "date": "2026-06-01",
+    "method": "Cash"
+  },
+  {
+    "docEntry": 437191,
+    "docNum": 333656,
+    "cardCode": "C3050",
+    "amount": 610.2,
+    "date": "2026-06-01",
+    "method": "CB-Phone"
+  }
+]

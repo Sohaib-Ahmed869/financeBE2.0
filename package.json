@@ -1,0 +1,56 @@
+{
+  "name": "hff-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "HalalFoods Finance v2 — backend (Node + Express + Mongo, multi-tenant)",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "nodemon",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "seed": "ts-node src/seeds/seed.ts",
+    "seed:june": "ts-node scripts/seed-june2026.ts",
+    "e2e": "node scripts/e2e-june2026.js",
+    "demo:sap": "node scripts/seed-sap-june2026.js && node scripts/e2e-june2026.js --with-sap",
+    "demo:fe": "node scripts/reset-demo.js && ts-node scripts/seed-june2026.ts && node scripts/seed-sap-june2026.js && node scripts/demo-prepare.js",
+    "demo:client": "node scripts/reset-demo.js && node scripts/seed-sap-client.js",
+    "verify:client": "node scripts/verify-client.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "argon2": "^0.41.1",
+    "axios": "^1.16.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "csv-parse": "^6.2.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.0",
+    "multer": "^2.1.1",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "pino-pretty": "^13.0.0",
+    "ulid": "^2.3.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^22.10.2",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,4 @@
+Date,Heure,Nom,Type,État,Devise,Avant commission,Commission,Net,Numéro de transaction,De l'adresse email,À l'adresse email
+09/06/2026,11:02:10,FIRAT,Paiement DCC,Terminé,EUR,"188,20","-6,12","182,08",7CD22334EF556677A,firat-paris@example.com,tresorerie@msfhalal.fr
+09/06/2026,11:02:10,,Paiement standard,Terminé,EUR,"-6,12","0,00","-6,12",7CD22334EF556677B,,tresorerie@msfhalal.fr
+10/06/2026,23:00:00,,Virement standard,Terminé,EUR,"-182,08","0,00","-182,08",7ZZ11223344556677C,,tresorerie@msfhalal.fr
