@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { env } from '../../config/env';
 import { asyncHandler } from '../../lib/asyncHandler';
 import { issueCsrfCookie, clearCsrfCookie } from '../../middleware/csrf';
+import { baseCookieOptions, clearCookieOptions } from '../../lib/cookies';
 import * as svc from './auth.service';
 import type { LoginInput, UpdateMeInput, ChangePasswordInput } from './auth.validators';
 import { UnauthorizedError } from '../../lib/errors';
@@ -15,20 +16,14 @@ function uaOf(req: Request): string {
 
 function setSessionCookie(res: Response, token: string, expiresAt: Date) {
   res.cookie(env.COOKIE_NAME, token, {
+    ...baseCookieOptions(),
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: 'lax',
-    domain: env.COOKIE_DOMAIN || undefined,
-    path: '/',
     expires: expiresAt,
   });
 }
 
 function clearSessionCookie(res: Response) {
-  res.clearCookie(env.COOKIE_NAME, {
-    domain: env.COOKIE_DOMAIN || undefined,
-    path: '/',
-  });
+  res.clearCookie(env.COOKIE_NAME, clearCookieOptions());
 }
 
 export const login = asyncHandler<unknown, unknown, LoginInput>(async (req, res) => {

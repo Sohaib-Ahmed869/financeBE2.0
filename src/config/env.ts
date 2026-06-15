@@ -39,6 +39,10 @@ const EnvSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
+  // 'none' is required when the frontend and API live on different sites
+  // (e.g. finance.* calling backendfinance.*). Browsers only accept None
+  // when Secure is also set — see baseCookieOptions().
+  COOKIE_SAMESITE: z.enum(['lax', 'strict', 'none']).default('lax'),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(8),
 
   CLIENT_ORIGIN: z

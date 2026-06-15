@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
 import { ForbiddenError } from '../lib/errors';
 import { randomToken, safeEqual } from '../lib/crypto';
+import { baseCookieOptions, clearCookieOptions } from '../lib/cookies';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -20,11 +21,8 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
   if (!cookieToken) {
     const fresh = randomToken(24);
     res.cookie(cookieName, fresh, {
+      ...baseCookieOptions(),
       httpOnly: false,
-      secure: env.COOKIE_SECURE,
-      sameSite: 'lax',
-      domain: env.COOKIE_DOMAIN || undefined,
-      path: '/',
       maxAge: env.SESSION_TTL_HOURS * 60 * 60 * 1000,
     });
     if (!SAFE_METHODS.has(req.method)) {
@@ -46,19 +44,13 @@ export function csrfMiddleware(req: Request, res: Response, next: NextFunction) 
 export function issueCsrfCookie(res: Response): string {
   const token = randomToken(24);
   res.cookie(env.CSRF_COOKIE_NAME, token, {
+    ...baseCookieOptions(),
     httpOnly: false,
-    secure: env.COOKIE_SECURE,
-    sameSite: 'lax',
-    domain: env.COOKIE_DOMAIN || undefined,
-    path: '/',
     maxAge: env.SESSION_TTL_HOURS * 60 * 60 * 1000,
   });
   return token;
 }
 
 export function clearCsrfCookie(res: Response): void {
-  res.clearCookie(env.CSRF_COOKIE_NAME, {
-    domain: env.COOKIE_DOMAIN || undefined,
-    path: '/',
-  });
+  res.clearCookie(env.CSRF_COOKIE_NAME, clearCookieOptions());
 }
