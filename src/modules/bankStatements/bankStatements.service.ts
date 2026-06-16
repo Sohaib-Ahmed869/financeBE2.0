@@ -235,12 +235,52 @@ function classifySapMethod(p: {
   return null;
 }
 
-function sapPaymentAmount(p: {
-  DocTotal?: number;
-  CashSum?: number;
-  TransferSum?: number;
-}): number {
-  return p.DocTotal ?? p.CashSum ?? p.TransferSum ?? 0;
+function sumBy(arr: unknown, key: string): number {
+  if (!Array.isArray(arr)) return 0;
+  return arr.reduce(
+    (s, x) => s + (Number((x as Record<string, unknown>)?.[key]) || 0),
+    0,
+  );
+}
+
+/**
+ * Amount attributable to a payment's classified method.
+ *
+ * SAP's Service-Layer IncomingPayments routinely leave `DocTotal` empty
+ * (0 / undefined) — the real figure lives in the RCT sub-table:
+ * `PaymentChecks[].CheckSum` (cheque) / `PaymentCreditCards[].CreditSum`
+ * (card), or in `TransferSum` (bank) / `CashSum` (cash). Reading only
+ * `DocTotal` zeroed every cheque & card payment, so none produced a daily
+ * method-total and bank lines had nothing to match. Read the method's own
+ * source first; fall back to `DocTotal` only when the sub-total is missing.
+ */
+function sapMethodAmount(
+  p: {
+    DocTotal?: number;
+    CashSum?: number;
+    TransferSum?: number;
+    PaymentChecks?: unknown[];
+    PaymentCreditCards?: unknown[];
+  },
+  method: SapMethod,
+): number {
+  let amt = 0;
+  switch (method) {
+    case 'cheque':
+      amt = sumBy(p.PaymentChecks, 'CheckSum');
+      break;
+    case 'card':
+      amt = sumBy(p.PaymentCreditCards, 'CreditSum');
+      break;
+    case 'bank':
+      amt = p.TransferSum ?? 0;
+      break;
+    case 'cash':
+      amt = p.CashSum ?? 0;
+      break;
+  }
+  if (amt <= 0 && (p.DocTotal ?? 0) > 0) amt = p.DocTotal as number;
+  return Math.round(amt * 100) / 100;
 }
 
 interface MethodTotal {
@@ -295,7 +335,7 @@ async function buildSapMethodTotals(
     if (!(p.DocDate instanceof Date)) continue;
     const method = classifySapMethod(p);
     if (!method) continue;
-    const amt = sapPaymentAmount(p);
+    const amt = sapMethodAmount(p, method);
     if (amt <= 0) continue;
     const key = `${dayKey(p.DocDate)}|${method}`;
     const existing = totals.get(key);
