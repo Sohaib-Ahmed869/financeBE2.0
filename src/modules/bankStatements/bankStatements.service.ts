@@ -27,7 +27,21 @@ const CATEGORY_BY_METHOD: Record<SapMethod, string> = {
   card: 'card-settlement',
 };
 
+/** Exact match band — a bank line whose amount is within this of the SAP
+ *  figure is a clean match (no discrepancy). */
 const TOLERANCE = 0.01;
+
+/**
+ * Discrepancy band — a bank line that isn't exact still matches its SAP
+ * method-total / deposit slip when the gap is within the LARGER of a fixed
+ * €5.00 or 2% of the SAP figure (absorbs cheque rounding and deposit fees).
+ * Such a line is marked `matched` with a `discrepancyAmount` so the gap is
+ * visible (UI shows a "Δ" badge; the day/method summary still reads `partial`).
+ */
+const DISCREPANCY_ABS = 5.0;
+const DISCREPANCY_PCT = 0.02;
+const discrepancyBand = (sapFigure: number): number =>
+  Math.max(DISCREPANCY_ABS, Math.abs(sapFigure) * DISCREPANCY_PCT);
 
 const dayKey = (d: Date): string => d.toISOString().slice(0, 10);
 
@@ -201,6 +215,7 @@ export async function getStatement(
       matchedSettlementDate: l.matchedSettlementDate ?? null,
       matchedSapPaymentDocEntry: l.matchedSapPaymentDocEntry ?? null,
       matchedCardCode: l.matchedCardCode ?? null,
+      discrepancyAmount: l.discrepancyAmount ?? null,
     })),
   };
 }
@@ -407,6 +422,7 @@ export async function autoMatchStatement(
   let matched = 0;
   let envelopeMatched = 0;
   let methodMatched = 0;
+  let discrepancyMatched = 0;
   let learnedTagged = 0;
   let categorized = 0;
 
@@ -418,15 +434,22 @@ export async function autoMatchStatement(
     if (!resolved && l.envelopeNumber) {
       const key = l.envelopeNumber.toLowerCase().replace(/\s+/g, '');
       const slip = slipByRef.get(key);
-      if (slip && (slip.amount === null || Math.abs(slip.amount - l.amount) <= TOLERANCE)) {
+      // The envelope ref already pins the deposit; allow a wider amount gap
+      // (discrepancy band) since the slip total can differ from the bank credit.
+      if (slip && (slip.amount === null || Math.abs(slip.amount - l.amount) <= discrepancyBand(slip.amount))) {
         const method: SapMethod = slip.kind === 'cheques' ? 'cheque' : 'cash';
         updates.category = CATEGORY_BY_METHOD[method];
         updates.matchedMethod = method;
         updates.matchedSettlementDate = slip.date;
         updates.status = 'matched';
+        updates.discrepancyAmount =
+          slip.amount === null || Math.abs(slip.amount - l.amount) <= TOLERANCE
+            ? 0
+            : +(l.amount - slip.amount).toFixed(2);
         addFound(method, slip.date, l.amount);
         envelopeMatched++;
         matched++;
+        if (updates.discrepancyAmount) discrepancyMatched++;
         resolved = true;
       }
     }
@@ -434,7 +457,7 @@ export async function autoMatchStatement(
     if (!resolved && l.direction === 'credit') {
       for (const [ref, slip] of slipByRef) {
         if (slip.amount === null) continue;
-        if (Math.abs(slip.amount - l.amount) > TOLERANCE) continue;
+        if (Math.abs(slip.amount - l.amount) > discrepancyBand(slip.amount)) continue;
         if (!sameDay(slip.date, l.operationDate, 3)) continue;
         const method: SapMethod = slip.kind === 'cheques' ? 'cheque' : 'cash';
         updates.category = CATEGORY_BY_METHOD[method];
@@ -442,9 +465,12 @@ export async function autoMatchStatement(
         updates.matchedSettlementDate = slip.date;
         updates.reference = l.reference || `slip:${ref}`;
         updates.status = 'matched';
+        updates.discrepancyAmount =
+          Math.abs(slip.amount - l.amount) <= TOLERANCE ? 0 : +(l.amount - slip.amount).toFixed(2);
         addFound(method, slip.date, l.amount);
         envelopeMatched++;
         matched++;
+        if (updates.discrepancyAmount) discrepancyMatched++;
         resolved = true;
         break;
       }
@@ -452,11 +478,19 @@ export async function autoMatchStatement(
 
     // 2. SAP daily method total — by amount + near date. This is the core of
     //    the verification: does a bank credit line up with what SAP says was
-    //    taken that day for that method?
+    //    taken that day for that method? An exact hit (±0.01) is a clean match;
+    //    otherwise the nearest method-total within the discrepancy band matches
+    //    and the gap is recorded as `discrepancyAmount`.
     if (!resolved && l.direction === 'credit') {
+      let best: { mt: MethodTotal; delta: number } | null = null;
       for (const mt of methodTotals.values()) {
-        if (Math.abs(mt.total - l.amount) > TOLERANCE) continue;
         if (!sameDay(mt.date, l.operationDate, 3)) continue;
+        const delta = Math.abs(mt.total - l.amount);
+        if (delta > discrepancyBand(mt.total)) continue;
+        if (!best || delta < best.delta) best = { mt, delta };
+      }
+      if (best) {
+        const { mt, delta } = best;
         updates.category = CATEGORY_BY_METHOD[mt.method];
         updates.matchedMethod = mt.method;
         updates.matchedSettlementDate = mt.date;
@@ -464,11 +498,12 @@ export async function autoMatchStatement(
           updates.matchedSapPaymentDocEntry = mt.docEntries[0];
         }
         updates.status = 'matched';
+        updates.discrepancyAmount = delta <= TOLERANCE ? 0 : +(l.amount - mt.total).toFixed(2);
         addFound(mt.method, mt.date, l.amount);
         methodMatched++;
         matched++;
+        if (updates.discrepancyAmount) discrepancyMatched++;
         resolved = true;
-        break;
       }
     }
 
@@ -564,6 +599,7 @@ export async function autoMatchStatement(
       matched,
       envelopeMatched,
       methodMatched,
+      discrepancyMatched,
       learnedTagged,
       categorized,
       total: lines.length,

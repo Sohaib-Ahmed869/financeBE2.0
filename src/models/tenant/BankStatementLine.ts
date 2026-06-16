@@ -72,6 +72,14 @@ export const BankStatementLineSchema = new Schema(
     },
     matchedSettlementDate: { type: Date, default: null },
     /**
+     * Signed bank − SAP delta when a line matched its method-total / slip
+     * *outside* the exact ±0.01 band but within the discrepancy tolerance
+     * (max of €5.00 or 2%). `0` (or null) means an exact match. Surfaced as a
+     * "Δ" badge in the UI so the small gap is visible without blocking the
+     * verification. Internal only — never written to SAP.
+     */
+    discrepancyAmount: { type: Number, default: null },
+    /**
      * When a method-total resolves to a single SAP IncomingPayment, we keep its
      * DocEntry for traceability. Read-only reference — never written to SAP.
      */
