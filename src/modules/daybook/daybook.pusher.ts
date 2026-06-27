@@ -106,7 +106,7 @@ interface PushOneMethodArgs {
   models: TenantModels;
   line: PushableLine;
   slot: MethodSlot;
-  invoiceDocEntry: number;
+  invoiceDocEntry: number | null;
   actor: { userId: string; email: string };
 }
 
@@ -302,7 +302,7 @@ export async function pushMatchedLivraisons({
       match: m,
     };
 
-    if (m.status !== 'manual' && m.status !== 'auto' && m.status !== 'push-failed') {
+    if (m.status !== 'manual' && m.status !== 'auto' && m.status !== 'push-failed' && m.status !== 'on-account') {
       summary.results.push({
         index: i,
         status: 'skipped',
@@ -312,7 +312,8 @@ export async function pushMatchedLivraisons({
       summary.skipped++;
       continue;
     }
-    if (!m.invoiceDocEntry) {
+    const isOnAccount = m.status === 'on-account';
+    if (!m.invoiceDocEntry && !isOnAccount) {
       summary.results.push({
         index: i,
         status: 'skipped',
@@ -348,7 +349,7 @@ export async function pushMatchedLivraisons({
         models,
         line,
         slot,
-        invoiceDocEntry: m.invoiceDocEntry,
+        invoiceDocEntry: isOnAccount ? null : (m.invoiceDocEntry ?? null),
         actor,
       });
       perMethod.push(outcome);

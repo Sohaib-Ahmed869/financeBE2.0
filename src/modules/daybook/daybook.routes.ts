@@ -54,6 +54,11 @@ router.get(
   requirePermission('daybook.push'),
   ctrl.failedPushes,
 );
+router.post(
+  '/failed-pushes/retry',
+  requirePermission('daybook.push'),
+  ctrl.retryFailedPushesCtrl,
+);
 router.get(
   '/months/:year/:month',
   requirePermission('daybook.view'),

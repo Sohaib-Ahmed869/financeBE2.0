@@ -21,6 +21,7 @@ import {
   getDiscrepancyReport,
   getMonthKpis,
   listFailedPushes,
+  retryFailedPushes,
   autoMatchImportedPayments,
   matchImportedPayment,
   pushImportedPayment,
@@ -284,6 +285,18 @@ export const failedPushes = asyncHandler(async (req, res) => {
   if (!req.auth) throw new UnauthorizedError();
   if (!req.tenant) throw new BadRequestError('No active company');
   const result = await listFailedPushes(req.tenant.companyKey);
+  res.json(result);
+});
+
+export const retryFailedPushesCtrl = asyncHandler(async (req, res) => {
+  if (!req.auth) throw new UnauthorizedError();
+  if (!req.tenant) throw new BadRequestError('No active company');
+  const body = req.body as { date?: string; kind?: 'livraison' | 'posExtra' } | undefined;
+  const result = await retryFailedPushes(
+    req.tenant.companyKey,
+    { userId: req.auth.userId, email: req.auth.email, ip: ipOf(req) },
+    body?.date || body?.kind ? { date: body?.date, kind: body?.kind } : undefined,
+  );
   res.json(result);
 });
 

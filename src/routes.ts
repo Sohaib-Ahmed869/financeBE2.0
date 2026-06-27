@@ -16,6 +16,7 @@ import bankStatementsRoutes from './modules/bankStatements/bankStatements.routes
 import cardImportsRoutes from './modules/cardImports/cardImports.routes';
 import itemCostsRoutes from './modules/itemCosts/itemCosts.routes';
 import customersRoutes from './modules/customers/customers.routes';
+import reconciliationRoutes from './modules/reconciliation/reconciliation.routes';
 
 const router = Router();
 
@@ -40,5 +41,6 @@ router.use('/bank-statements', bankStatementsRoutes);
 router.use('/card-imports', cardImportsRoutes);
 router.use('/item-costs', itemCostsRoutes);
 router.use('/customers', customersRoutes);
+router.use('/reconciliation', reconciliationRoutes);
 
 export default router;

@@ -48,7 +48,7 @@ const MatchSubSchema = new Schema(
   {
     status: {
       type: String,
-      enum: ['unmatched', 'auto', 'manual', 'rejected', 'pushed', 'push-failed'],
+      enum: ['unmatched', 'auto', 'manual', 'rejected', 'pushed', 'push-failed', 'on-account'],
       default: 'unmatched',
     },
     invoiceDocEntry: { type: Number, default: null },

@@ -1017,7 +1017,7 @@ interface ReconciliationLineOut {
   remarques: string;
   sapStatusRaw: string;
   match: {
-    status: 'unmatched' | 'auto' | 'manual' | 'rejected';
+    status: 'unmatched' | 'auto' | 'manual' | 'rejected' | 'pushed' | 'push-failed' | 'on-account';
     invoiceDocEntry: number | null;
     invoiceDocNum: number | null;
     invoiceTotal: number | null;
@@ -1259,10 +1259,10 @@ export async function getReconciliation(
   for (const r of out) {
     totals.totalAmount += r.amount ?? 0;
     if (r.match.status === 'auto') totals.auto++;
-    else if (r.match.status === 'manual') totals.manual++;
+    else if (r.match.status === 'manual' || r.match.status === 'on-account') totals.manual++;
     else if (r.match.status === 'rejected') totals.rejected++;
-    else totals.unmatched++;
-    if (r.match.status === 'auto' || r.match.status === 'manual') {
+    else if (r.match.status !== 'pushed' && r.match.status !== 'push-failed') totals.unmatched++;
+    if (r.match.status === 'auto' || r.match.status === 'manual' || r.match.status === 'on-account') {
       totals.matched++;
       totals.matchedAmount += r.amount ?? 0;
     }
@@ -1561,7 +1561,7 @@ export async function setLineMatch(
   isoDate: string,
   lineIndex: number,
   patch: {
-    status: 'manual' | 'rejected' | 'unmatched';
+    status: 'manual' | 'rejected' | 'unmatched' | 'on-account';
     invoiceDocEntry?: number | null;
     notes?: string;
   },
@@ -1628,6 +1628,20 @@ export async function setLineMatch(
       invoiceDate: null,
       matchScore: null,
       matchReason: 'user-rejected',
+      matchedByEmail: actor.email,
+      matchedAt: updatedAt,
+      notes: patch.notes ?? '',
+    } as never;
+  } else if (patch.status === 'on-account') {
+    day.livraisons[lineIndex].match = {
+      status: 'on-account',
+      invoiceDocEntry: null,
+      invoiceDocNum: null,
+      invoiceTotal: null,
+      invoiceBalance: null,
+      invoiceDate: null,
+      matchScore: null,
+      matchReason: 'on-account',
       matchedByEmail: actor.email,
       matchedAt: updatedAt,
       notes: patch.notes ?? '',
@@ -1730,4 +1744,60 @@ export async function listFailedPushes(companyKey: string): Promise<{
   }
 
   return { items };
+}
+
+/**
+ * Retry every push-failed livraison and posExtra row from the last 30 days.
+ * Groups failures by date, then calls the existing push functions per date
+ * so we get the same outcome as a manual retry from the reconciliation screen.
+ *
+ * Optional `filter` narrows to a specific date + kind combination, allowing
+ * the workbench to retry a single row without re-running everything.
+ */
+export async function retryFailedPushes(
+  companyKey: string,
+  actor: ActorMeta,
+  filter?: { date?: string; kind?: 'livraison' | 'posExtra' },
+): Promise<{
+  retriedDates: string[];
+  pushed: number;
+  failed: number;
+}> {
+  const { items } = await listFailedPushes(companyKey);
+  const relevant = items.filter((it) => {
+    if (filter?.date && it.date !== filter.date) return false;
+    if (filter?.kind && it.kind !== filter.kind) return false;
+    return true;
+  });
+
+  if (relevant.length === 0) return { retriedDates: [], pushed: 0, failed: 0 };
+
+  const byDate = new Map<string, { livraisons: number[]; posExtras: number[] }>();
+  for (const it of relevant) {
+    if (!byDate.has(it.date)) byDate.set(it.date, { livraisons: [], posExtras: [] });
+    const bucket = byDate.get(it.date)!;
+    if (it.kind === 'livraison') bucket.livraisons.push(it.lineIndex);
+    else bucket.posExtras.push(it.lineIndex);
+  }
+
+  let pushed = 0;
+  let failed = 0;
+  const retriedDates: string[] = [];
+
+  for (const [isoDate, { livraisons, posExtras }] of byDate) {
+    retriedDates.push(isoDate);
+
+    if (livraisons.length > 0) {
+      const summary = await pushDay(companyKey, isoDate, actor, livraisons);
+      pushed += summary.pushed;
+      failed += summary.failed;
+    }
+    if (posExtras.length > 0) {
+      const posSummary = await pushPosExtras(companyKey, isoDate, actor, posExtras);
+      pushed += posSummary.pushed;
+      failed += posSummary.failed;
+    }
+  }
+
+  return { retriedDates, pushed, failed };
 }

@@ -16,6 +16,7 @@
     "demo:fe": "node scripts/reset-demo.js && ts-node scripts/seed-june2026.ts && node scripts/seed-sap-june2026.js && node scripts/demo-prepare.js",
     "demo:client": "node scripts/reset-demo.js && node scripts/seed-sap-client.js",
     "verify:client": "node scripts/verify-client.js",
+    "sync:3months": "ts-node scripts/sync-last-3months.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\""
   },

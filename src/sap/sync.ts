@@ -177,7 +177,7 @@ export async function syncEntity(
       pages++;
       const data: SapPaginated<Record<string, unknown>> = await sapGet<
         SapPaginated<Record<string, unknown>>
-      >(companyKey, nextUrl);
+      >(companyKey, nextUrl, { maxPageSize: opts.pageSize ?? 100 });
       logger.info(
         `sap.sync ${cfg.entity} [${companyKey}] page=${pages} got=${data.value.length} total=${stats.fetched + data.value.length} next=${data['odata.nextLink'] ? 'y' : 'n'}`,
       );

@@ -101,7 +101,7 @@ export type UpsertDayInput = z.infer<typeof upsertDaySchema>;
 
 export const setMatchSchema = z
   .object({
-    status: z.enum(['manual', 'rejected', 'unmatched']),
+    status: z.enum(['manual', 'rejected', 'unmatched', 'on-account']),
     invoiceDocEntry: z.number().int().positive().nullable().optional(),
     notes: z.string().max(500).optional(),
   })
